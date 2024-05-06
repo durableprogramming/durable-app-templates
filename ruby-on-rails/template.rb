@@ -1,14 +1,15 @@
 # Durable Programming App Templates
 # Ruby on Rails.
 #
-# This work is marked with CC0 1.0. 
-# To view a copy of this license, visit the following URL:
-#     https://creativecommons.org/publicdomain/zero/1.0/
+# Usage
+# -----
 #
-# Usage:
+# For PostgreSQL:
 #
-#
-
+# rails new bob --database=postgresql -m https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/template.rb
+# 
+# For MySQL: 
+# rails new bob --database=mysql -m https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/template.rb
 require 'active_record'
 require 'erb'
 #   ____ ___  _   _ _____ ___ ____ 
@@ -323,3 +324,7 @@ end
 #
 #                                        https://durableprogramming.com
 #
+#
+# This work is marked with CC0 1.0. 
+# To view a copy of this license, visit the following URL:
+#     https://creativecommons.org/publicdomain/zero/1.0/
