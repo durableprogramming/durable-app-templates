@@ -21,6 +21,13 @@
                                         https://durableprogramming.com
 
 
+App templates
+--------------
+
+See individual README for different sub-projects. 
+ 
  This work is marked with CC0 1.0. 
  To view a copy of this license, visit the following URL:
      https://creativecommons.org/publicdomain/zero/1.0/
+
+Copyright 2024, Durable Programming LLC. All rights reserved. 
