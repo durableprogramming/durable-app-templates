@@ -204,6 +204,8 @@ create_file '.env.erb' do
   <<~ENV
     DB_USERNAME=app_database_user
     DB_PASSWORD=<%=SecureRandom.hex(16)%>
+    SECRET_KEY_BASE=<%=SecureRandom.hex(64)%>
+
   ENV
 end
 
