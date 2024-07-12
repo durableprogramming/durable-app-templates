@@ -109,7 +109,7 @@ create_file 'docker-compose.yml' do
         build: .
         command: bundle exec rails s -p 3000 -b '0.0.0.0'
         volumes:
-          - .:/app
+          - .:/rails
         ports:
           - "127.0.0.1:3000:3000"
         depends_on:
