@@ -115,7 +115,6 @@ create_file 'docker-compose.yml' do
 
     <% if use_dozzle %>
       dozzle: 
-        container_name: dozzle
         image: amir20/dozzle:latest
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
