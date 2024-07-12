@@ -10,8 +10,12 @@
 # 
 # For MySQL: 
 # rails new bob --database=mysql -m https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/template.rb
-require 'active_record'
 require 'erb'
+
+def to_bool(_)
+  %w[1 true yes].include?(_.to_s.downcase)
+end
+
 #   ____ ___  _   _ _____ ___ ____ 
 #  / ___/ _ \| \ | |  ___|_ _/ ___|
 # | |  | | | |  \| | |_   | | |  _ 
@@ -31,7 +35,7 @@ end
 # Check environment variable 'USE_DOZZLE' if set.
 # If not set, prompt the user.
 use_dozzle = if ENV.has_key?('USE_DOZZLE')
-  ActiveRecord::Type::Boolean.new.cast(ENV['USE_DOZZLE'])
+ to_bool(ENV['USE_DOZZLE'])
 else
   yes?("Add amir20/dozzle (log viewer)?")
 end
@@ -40,21 +44,21 @@ end
 # Check environment variable 'USE_DOCKER_ETCHOSTS' if set.
 # If not set, prompt the user.
 use_docker_etchosts = if ENV.has_key?("USE_DOCKER_ETCHOSTS")
-  ActiveRecord::Type::Boolean.new.cast(ENV['USE_DOCKER_ETCHOSTS'])
+ to_bool(ENV['USE_DOCKER_ETCHOSTS'])
 else
   yes?("Add costela/docker-etchosts (log viewer)?")
 end
 
 # Determine if MySQL should be used.
 use_mysql = if ENV.has_key?('USE_MYSQL')
-  ActiveRecord::Type::Boolean.new.cast(ENV['USE_MYSQL'])
+ to_bool(ENV['USE_MYSQL'])
 else
   cli_database == 'mysql'
 end
 
 # Determine if PostgreSQL should be used.
 use_postgresql = if ENV.has_key?('USE_PG')
-  ActiveRecord::Type::Boolean.new.cast(ENV['USE_PG'])
+ to_bool(ENV['USE_PG'])
 else
   cli_database == 'postgresql'
 end
@@ -63,7 +67,7 @@ end
 # Check environment variable 'USE_NIX' if set.
 # If not set, prompt the user.
 use_nix = if ENV.has_key?('USE_NIX')
-  ActiveRecord::Type::Boolean.new.cast(ENV['USE_NIX'])
+ to_bool(ENV['USE_NIX'])
 else
   yes?("Use bobvanderlinden/nixpkgs-ruby for Nix flake?")
 end
@@ -199,6 +203,8 @@ create_file '.env.erb' do
   <<~ENV
     DB_USERNAME=app_database_user
     DB_PASSWORD=<%=SecureRandom.hex(16)%>
+    SECRET_KEY_BASE=<%=SecureRandom.hex(64)%>
+
   ENV
 end
 
