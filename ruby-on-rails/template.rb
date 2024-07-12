@@ -25,8 +25,7 @@ end
 cli_database = self.options['database'] 
 
 if cli_database == 'sqlite3' && ! ENV['SKIP_CHECK_SQLITE']
-  puts "This template does not support sqlite3. Please specify MySQL or PostgresSQL explicitly,
-    with --database=postgresql or --database=mysql as an option on your 'rails new' command. If you want to run the template anyway, set the environment variable SKIP_CHECK_SQLITE."
+  puts "This template does not support sqlite3. Please specify MySQL or PostgresSQL explicitly, with --database=postgresql or --database=mysql as an option on your 'rails new' command. If you want to run the template anyway, set the environment variable SKIP_CHECK_SQLITE."
 
   exit
 end
@@ -201,6 +200,8 @@ run 'chmod 700 scripts/*'
 
 create_file '.env.erb' do
   <<~ENV
+    DB_HOST=db
+    DB_NAME=app
     DB_USERNAME=app_database_user
     DB_PASSWORD=<%=SecureRandom.hex(16)%>
     SECRET_KEY_BASE=<%=SecureRandom.hex(64)%>
@@ -234,6 +235,28 @@ if use_postgresql
     env_file:
       - .env
   "
+
+  create_file "config/database.yml", <<~DATABASE_YML
+    default: &default
+      adapter: postgresql
+      encoding: unicode
+      pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+      host: <%=ENV['DB_HOST']%>
+      username: <%= ENV["DB_USERNAME"] %>
+      password: <%= ENV["DB_PASSWORD"] %>
+
+    development:
+      <<: *default
+      database: <%=ENV['DB_NAME']%>
+
+    test:
+      <<: *default
+      database: <%=ENV['DB_NAME_TEST']%>
+
+    production:
+      <<: *default
+      database: <%=ENV['DB_NAME']%>
+    DATABASE_YML
 end
 
 if use_mysql
@@ -246,12 +269,33 @@ if use_mysql
     volumes:
       - ./tmp/db:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      DB_ROOT_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     env_file:
       - .env
 "
+  create_file "config/database.yml", <<~DATABASE_YML
+    default: &default
+      adapter: mysql2
+      encoding: unicode
+      pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+      host: <%=ENV['DB_HOST']%>
+      username: <%= ENV["DB_PASSWORD"] %>
+      password: <%= ENV["DB_PASSWORD"] %>
+
+    development:
+      <<: *default
+      database: <%=ENV['DB_NAME']%>
+
+    test:
+      <<: *default
+      database: <%=ENV['DB_NAME_TEST']%>
+
+    production:
+      <<: *default
+      database: <%=ENV['DB_NAME']%>
+    DATABASE_YML
 end
 
 #  _   _ _____  __
