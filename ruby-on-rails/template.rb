@@ -30,6 +30,27 @@ if cli_database == 'sqlite3' && ! ENV['SKIP_CHECK_SQLITE']
   exit
 end
 
+module DurableTemplate
+	def self.script_directory
+		File.expand_path(__dir__)
+	end
+
+	def self.apply_feature(feature_name)
+		filename = feature_name + '.rb'
+		local_paths = [ '~/.durable_template/features/' + filename, 
+                    File.join(DurableTemplate.script_directory, './features/' + filename) ]
+		matching_local_path = local_paths.detect { |_| File.exist?(_) }
+
+		if matching_local_path
+			system "bin/rails", "app:template", "LOCATION=#{matching_local_path}"
+		else
+			template_uri = 'https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/' + filename
+			system "bin/rails", "app:template", "LOCATION=#{}"
+		end
+			
+	end
+end
+
 # Determine if dozzle (log viewer) should be used.
 # Check environment variable 'USE_DOZZLE' if set.
 # If not set, prompt the user.
@@ -45,21 +66,21 @@ end
 use_docker_etchosts = if ENV.has_key?("USE_DOCKER_ETCHOSTS")
  to_bool(ENV['USE_DOCKER_ETCHOSTS'])
 else
-  yes?("Add costela/docker-etchosts (log viewer)?")
+  yes?("Add costela/docker-etchosts (docker container DNS on host)?")
 end
 
 # Determine if MySQL should be used.
-use_mysql = if ENV.has_key?('USE_MYSQL')
+use_mysql =  if ENV.has_key?('USE_MYSQL')
  to_bool(ENV['USE_MYSQL'])
 else
-  cli_database == 'mysql'
+  ::Bundler::Definition.build('./Gemfile', nil, nil).requires.include?('mysql2') 
 end
 
 # Determine if PostgreSQL should be used.
-use_postgresql = if ENV.has_key?('USE_PG')
+use_postgresql =  if ENV.has_key?('USE_PG')
  to_bool(ENV['USE_PG'])
 else
-  cli_database == 'postgresql'
+  ::Bundler::Definition.build('./Gemfile', nil, nil).requires.include?('pg') 
 end
  
 # Determine if Nix support should be used.
@@ -83,8 +104,6 @@ ruby_version = File.read('.ruby-version').chomp.gsub(/^ruby-/, '')
                                            
 # Add debugger
 run "bundle add pry"
-# Add environment variable management
-run "bundle add dotenv-rails"
 
 
 #  ____   ___   ____ _  _______ ____  
@@ -99,7 +118,7 @@ run "bundle add dotenv-rails"
 # | |__| |_| | |  | |  __/| |_| |___) | |___ 
 #  \____\___/|_|  |_|_|    \___/|____/|_____|
                                            
-create_file 'docker-compose.yml' do
+file 'docker-compose.yml' do
 
   out = ERB.new(<<~DOCKER_COMPOSE).result(binding)
     version: '3'
@@ -139,18 +158,8 @@ create_file 'docker-compose.yml' do
   out
 end
 
-#  __  __ ___ ____  _____      __     _    ____  ____  _____ 
-# |  \/  |_ _/ ___|| ____|    / /    / \  / ___||  _ \|  ___|
-# | |\/| || |\___ \|  _|     / /    / _ \ \___ \| | | | |_   
-# | |  | || | ___) | |___   / /    / ___ \ ___) | |_| |  _|  
-# |_|  |_|___|____/|_____| /_/    /_/   \_\____/|____/|_|    
-#
-# This secction creates a .tools-version file for use by the
-# asdf or mise en place tool management software.
+DurableTemplate.apply_feature( 'mise' )
 
-create_file '.tool-versions' do
-  "ruby #{ruby_version}"
-end
 
 #  ____   ____ ____  ___ ____ _____ ____  
 # / ___| / ___|  _ \|_ _|  _ \_   _/ ___| 
@@ -177,40 +186,10 @@ create_file 'scripts/docker_shell' do
   BASH
 end
 
-create_file './scripts/generate_dotenv' do
-  # This script will generate a new .env file based on the
-  # .env.erb template.
-  <<~SCRIPT
-  #!/bin/env -S rails runner
-
-  File.write(".env", ERB.new(File.read(".env.erb")).result)
-  SCRIPT
-end
 
 run 'chmod 700 scripts/*'
 
-#  ____   ___ _____ _____ _   ___     __
-# |  _ \ / _ \_   _| ____| \ | \ \   / /
-# | | | | | | || | |  _| |  \| |\ \ / / 
-# | |_| | |_| || | | |___| |\  | \ V /  
-# |____/ \___/ |_| |_____|_| \_|  \_/   
-#                                       
-# This section creates a sample template for your .env file
-# and runs the script to initialize this installation.
-
-create_file '.env.erb' do
-  <<~ENV
-    DB_HOST=db
-    DB_NAME=app
-    DB_USERNAME=app_database_user
-    DB_PASSWORD=<%=SecureRandom.hex(16)%>
-    SECRET_KEY_BASE=<%=SecureRandom.hex(64)%>
-
-  ENV
-end
-
-run './scripts/generate_dotenv'
-
+DurableTemplate.apply_feature 'dotenv'
 
 #  ____    _  _____  _    ____    _    ____  _____ 
 # |  _ \  / \|_   _|/ \  | __ )  / \  / ___|| ____|
@@ -222,135 +201,23 @@ run './scripts/generate_dotenv'
 
 if use_postgresql
 
-  # Add the pg container to our docker-compose.yml file:
-  #
-  append_file "docker-compose.yml",  "
-  db:
-    image: postgres
-    volumes:
-      - ./tmp/db:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    env_file:
-      - .env
-  "
-
-  create_file "config/database.yml", <<~DATABASE_YML
-    default: &default
-      adapter: postgresql
-      encoding: unicode
-      pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-      host: <%=ENV['DB_HOST']%>
-      username: <%= ENV["DB_USERNAME"] %>
-      password: <%= ENV["DB_PASSWORD"] %>
-
-    development:
-      <<: *default
-      database: <%=ENV['DB_NAME']%>
-
-    test:
-      <<: *default
-      database: <%=ENV['DB_NAME_TEST']%>
-
-    production:
-      <<: *default
-      database: <%=ENV['DB_NAME']%>
-    DATABASE_YML
+  DurableTemplate.apply_feature 'postgresql'
 end
 
 if use_mysql
 
 
-  # Add the MySQL container to our docker-compose.yml file:
-  append_file "docker-compose.yml",  "
-  db:
-    image: mysql
-    volumes:
-      - ./tmp/db:/var/lib/mysql
-    environment:
-      DB_ROOT_PASSWORD: ${DB_PASSWORD}
-      DB_USER: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-    env_file:
-      - .env
-"
-  create_file "config/database.yml", <<~DATABASE_YML
-    default: &default
-      adapter: mysql2
-      encoding: unicode
-      pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-      host: <%=ENV['DB_HOST']%>
-      username: <%= ENV["DB_PASSWORD"] %>
-      password: <%= ENV["DB_PASSWORD"] %>
-
-    development:
-      <<: *default
-      database: <%=ENV['DB_NAME']%>
-
-    test:
-      <<: *default
-      database: <%=ENV['DB_NAME_TEST']%>
-
-    production:
-      <<: *default
-      database: <%=ENV['DB_NAME']%>
-    DATABASE_YML
+  DurableTemplate.apply_feature 'mysql'
 end
 
-#  _   _ _____  __
-# | \ | |_ _\ \/ /
-# |  \| || | \  / 
-# | |\  || | /  \ 
-# |_| \_|___/_/\_\
-#                 
-# If selected, this section initializes a flake.nix using the bobvanderlinden/nixpkgs-ruby
-# repository.
 
 if use_nix
-
-  run "nix flake init --template github:bobvanderlinden/nixpkgs-ruby#"
-
-  # Add some build dependencies to the generated nix flake:
-  
-  inject_into_file 'flake.nix', after: 'buildInputs = [' do '
-              libxml2
-              libxslt
-              libyaml
-              zlib' + (
-                use_postgresql ? 
-                "\n
-              postgresql\n"  : ""
-              ) + (
-                use_mysql ? 
-                "\n
-              mysql\n
-              libmysqlclient\n"  : "")
-  end
-
-  # For technical reasons, our nix setup won't work properly if 
-  # .ruby-version isn't at least a tracked file.
-  
-  run 'git add .ruby-version'
-
+  DurableTemplate.apply_feature 'nix'
 
 end
 
-#    _____ _   ___     ______   ____ 
-#   | ____| \ | \ \   / /  _ \ / ___|
-#   |  _| |  \| |\ \ / /| |_) | |    
-#  _| |___| |\  | \ V / |  _ <| |___ 
-# (_)_____|_| \_|  \_/  |_| \_\\____|
-#                                    
-# This section customizes our .envrc.
 
-append_file '.envrc' do
-  <<~ENVRC
-    dotenv
-    layout ruby
-  ENVRC
-end
-
+DurableTemplate.apply_feature 'envrc'
 
 #                        .::::           lkkkkkkkkkd  lkkko  dkkk: 'kkkkkkkkkd.    .kkkkx    .kkkkkkkkkx.  kkkk.     xkkkkkkkx
 #                   ...  llll;           dKKKKKKKKKK' dKKKx  OKKKl ,KKKKKKKKKKx    lKKKKK.   .KKKKKKKKKKx  KKKK.     OKKKKKKKK.
