@@ -4,13 +4,9 @@
 # Add Inertia.js
 run "yarn add @inertiajs/inertia @inertiajs/svelte @sveltejs/vite-plugin-svelte svelte"
 
-# Add Vite and Svelte
-run "yarn create svelte app/frontend"
-
-gem 'vite_rails'
-gem 'foreman'
 
 run 'bundle install'
+run 'bundle add vite_rails'
 run 'bundle exec vite install'
 
 file 'vite.config.ts', <<-CODE
@@ -61,6 +57,12 @@ data['all']['sourceCodeDir'] = 'app/frontend'
 File.open('config/vite.json', 'w') do |f|
   f.write(JSON.pretty_generate(data))
 end
+
+
+
+run 'bundle add vite_rails'
+
+run 'bin/rails generate inertia:install'
 
 
 file "app/frontend/entrypoints.application.js", <<-CODE
