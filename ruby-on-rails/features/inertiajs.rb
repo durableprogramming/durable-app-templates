@@ -60,8 +60,6 @@ end
 
 
 
-run 'bundle add vite_rails'
-
 run 'bin/rails generate inertia:install'
 
 
