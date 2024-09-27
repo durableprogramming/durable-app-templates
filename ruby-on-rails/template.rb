@@ -11,6 +11,7 @@
 # For MySQL: 
 # rails new bob --database=mysql -m https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/template.rb
 require 'erb'
+require 'bundler'
 
 def to_bool(_)
   %w[1 true yes].include?(_.to_s.downcase)
