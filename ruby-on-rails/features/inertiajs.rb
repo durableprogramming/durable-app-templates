@@ -6,7 +6,11 @@ run "yarn add @inertiajs/inertia @inertiajs/svelte @sveltejs/vite-plugin-svelte 
 
 
 run 'bundle install'
-run 'bundle add vite_rails'
+
+unless Bundler.definition.dependencies.any? { |d| d.name == 'vite_rails' }
+  run 'bundle add vite_rails'
+end
+
 run 'bundle exec vite install'
 
 file 'vite.config.ts', <<-CODE
@@ -78,6 +82,9 @@ createInertiaApp({
 })
 CODE
 
+unless Bundler.definition.dependencies.any? { |d| d.name == 'foreman' }
+  run 'bundle add foreman'
+end
 
 file "bin/dev", <<-CODE
 #!/bin/env bash
@@ -85,6 +92,7 @@ file "bin/dev", <<-CODE
 exec foreman start -f Procfile.dev "$@"
 CODE
 
+run 'chmod 700 bin/dev'
 
 
 file "Procfile.dev", <<-CODE
