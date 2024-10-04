@@ -74,14 +74,14 @@ end
 use_mysql =  if ENV.has_key?('USE_MYSQL')
  to_bool(ENV['USE_MYSQL'])
 else
-  ::Bundler::Definition.build('./Gemfile', nil, nil).requires.include?('mysql2') 
+  Bundler.definition.dependencies.any? { |d| d.name == 'mysql2' }
 end
 
 # Determine if PostgreSQL should be used.
 use_postgresql =  if ENV.has_key?('USE_PG')
  to_bool(ENV['USE_PG'])
 else
-  ::Bundler::Definition.build('./Gemfile', nil, nil).requires.include?('pg') 
+  Bundler.definition.dependencies.any? { |d| d.name == 'pg' }
 end
  
 # Determine if Nix support should be used.
