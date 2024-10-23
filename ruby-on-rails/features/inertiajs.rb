@@ -2,7 +2,7 @@
 # Inertia.js, Vite, Svelte Rails Template
 
 # Add Inertia.js
-run "yarn add @inertiajs/inertia @inertiajs/svelte @sveltejs/vite-plugin-svelte svelte"
+run "yarn add @inertiajs/svelte svelte"
 
 
 run 'bundle install'
