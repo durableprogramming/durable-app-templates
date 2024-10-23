@@ -46,7 +46,7 @@ module DurableTemplate
 			system "bin/rails", "app:template", "LOCATION=#{matching_local_path}"
 		else
 			template_uri = 'https://raw.githubusercontent.com/durableprogramming/durable-app-templates/main/ruby-on-rails/' + filename
-			system "bin/rails", "app:template", "LOCATION=#{}"
+			system "bin/rails", "app:template", "LOCATION=#{template_uri}"
 		end
 			
 	end
