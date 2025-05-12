@@ -31,3 +31,7 @@ See individual README for different sub-projects.
      https://creativecommons.org/publicdomain/zero/1.0/
 
 Copyright 2024, Durable Programming LLC. All rights reserved. 
+
+Project Homepage:
+
+https://github.com/durableprogramming/durable-app-templates
